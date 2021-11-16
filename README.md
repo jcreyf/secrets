@@ -1,2 +1,3 @@
-# secrets
-App to encrypt/decrypt secrets using the AES-256-CBC cipher
+# Secrets
+App to encrypt/decrypt secrets using the `AES-256-CBC` cipher.
+
