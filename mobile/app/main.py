@@ -1,3 +1,7 @@
+#
+# THIS FILE IS AN EXACT COPY OF secrets.py!!!!
+# THIS FILE IS REQUIRED FOR BUILDOZER TO GENERATE THE ANDROID APP
+#
 import kivy
 kivy.require('2.0.0')
 
@@ -8,11 +12,12 @@ from kivy.app import App
 import os
 import sys
 import pyperclip
+from pathlib import Path
 
-import inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir) 
+#import inspect
+#currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+#parentdir = os.path.dirname(currentdir)
+#sys.path.insert(0, parentdir) 
 import secrets
 
 
@@ -22,6 +27,7 @@ class CiphersApp(App):
     super().__init__(**kwargs)
     self.key=""
     self.pwd=""
+    self.home=str(Path.home())
 
 
   def btnProcess(self):
@@ -38,6 +44,8 @@ class CiphersApp(App):
 
   def txtPwd(self):
     self.pwd=self.root.ids.txtPwd.text
+#    pyperclip.copy(self.home)
+    self.root.ids.lblPwd.text=self.home
 
 
 if __name__ == '__main__':
