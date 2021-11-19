@@ -11,9 +11,12 @@ FloatLayout:
 
   Label:
     text: "Encryption key:"
+    text_size: self.size
     font_size: "20sp"
-    size_hint: (.25, .25)
-    pos_hint: {'x':.10, 'y':.70}
+    halign: "left"
+    valign: "middle"
+    size_hint: (.89, .25)
+    pos_hint: {'x':.01, 'y':.70}
   TextInput:
     id: txtKey
     hint_text: "Enter the encryption key"
@@ -24,15 +27,18 @@ FloatLayout:
     focus: True
     multiline: False
     border: (2, 2, 2, 2)
-    pos_hint: {'x':.10, 'y':.72}
-    size_hint: 0.50, 0.065
+    size_hint: 0.89, 0.065
+    pos_hint: {'x':.01, 'y':.72}
     on_text: app.txtKey()
 
   Label:
     text: "Password:"
+    text_size: self.size
     font_size: "20sp"
-    size_hint: (.25, .25)
-    pos_hint: {'x':.10, 'y':.55}
+    halign: "left"
+    valign: "middle"
+    size_hint: (.89, .25)
+    pos_hint: {'x':.01, 'y':.55}
   TextInput:
     id: txtPwd
     hint_text: "Enter the Password"
@@ -43,19 +49,35 @@ FloatLayout:
     focus: True
     multiline: False
     border: (2, 2, 2, 2)
-    pos_hint: {'x':.10, 'y':.57}
-    size_hint: 0.50, 0.065
+    size_hint: 0.89, 0.065
+    pos_hint: {'x':.01, 'y':.57}
     on_text: app.txtPwd()
 
   Label:
     id: lblPwd
     text: ""
+    markup: True
+    text_size: self.size
     font_size: "16sp"
-    size_hint: (.25, .25)
-    pos_hint: {'x':.40, 'y':.40}
+    halign: "left"
+    valign: "middle"
+    size_hint: (.89, .25)
+    pos_hint: {'x':.01, 'y':.38}
+
+  Button:
+    text: "Clear"
+    size_hint: (.15, .07)
+    pos_hint: {'x':.01, 'y':.88}
+    on_release: app.btnClear()
 
   Button:
     text: "Process"
-    size_hint: (.2, .1)
-    pos_hint: {'x':.70, 'y':.30}
+    size_hint: (.15, .07)
+    pos_hint: {'x':.84, 'y':.88}
     on_release: app.btnProcess()
+
+  Button:
+    text: "Exit"
+    size_hint: (.15, .07)
+    pos_hint: {'x':.84, 'y':.30}
+    on_release: app.btnExit()

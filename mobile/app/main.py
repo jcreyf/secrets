@@ -33,9 +33,23 @@ class CiphersApp(App):
   def btnProcess(self):
     cipher=secrets.AES_256_CBC(self.key)
     txt=cipher.encrypt(self.pwd)
-    self.root.ids.lblPwd.text=txt
+    self.root.ids.lblPwd.text=f"[b]{txt}[/b]"
     # Automatically copy the password on the clipboard so we can paste it:
-    Clipboard.copy(txt)
+    try:
+      # This will fail in linux:
+      Clipboard.copy(txt)
+    except:
+      # Just ignore for now.  We could at some point use a differnet module for this on Linux
+      pass
+
+
+  def btnClear(self):
+    self.root.ids.lblPwd.text=""
+    self.root.ids.txtPwd.text=""
+
+
+  def btnExit(self):
+    sys.exit(0)
 
 
   def txtKey(self):
@@ -44,7 +58,8 @@ class CiphersApp(App):
 
   def txtPwd(self):
     self.pwd=self.root.ids.txtPwd.text
-    self.root.ids.lblPwd.text=self.home
+#    self.root.ids.lblPwd.text=self.home
+# home = "/data" on Android
 
 
 if __name__ == '__main__':
