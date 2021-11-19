@@ -6,12 +6,12 @@ import kivy
 kivy.require('2.0.0')
 
 from kivy.app import App
+from kivy.core.clipboard import Clipboard
 
 # The next 7 lines are just so we can import the "secrets" module from this
 # directory's parent directory:
 import os
 import sys
-import pyperclip
 from pathlib import Path
 
 #import inspect
@@ -35,7 +35,7 @@ class CiphersApp(App):
     txt=cipher.encrypt(self.pwd)
     self.root.ids.lblPwd.text=txt
     # Automatically copy the password on the clipboard so we can paste it:
-    pyperclip.copy(txt)
+    Clipboard.copy(txt)
 
 
   def txtKey(self):
@@ -44,7 +44,6 @@ class CiphersApp(App):
 
   def txtPwd(self):
     self.pwd=self.root.ids.txtPwd.text
-#    pyperclip.copy(self.home)
     self.root.ids.lblPwd.text=self.home
 
 

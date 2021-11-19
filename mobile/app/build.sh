@@ -13,43 +13,25 @@ sed -i '1 i\#' main.py
 
 # Todo: add a flag to "clean" (delete .buildozer and venv and bin directories before starting
 
+# Build, deploy over USB and launch the app on the phone:
 buildozer android debug deploy run
+
+# Build, deploy over USB; launch the app on the phone and start capturing logs on the laptop:
+#buildozer android debug deploy run logcat
 if [ $? -eq 0 ] ; then
   echo "Build successful"
   ls -la ./bin/
 #  scp ./bin/secrets*.apk 192.168.1.250:/tmp/
+  adb logcat --pid=$(adb shell ps -e | grep jocreyf.com.secrets | tr -s [:space:] ' ' | cut -d' ' -f2)
 fi
 
-#
-# /home/jcreyf/.buildozer/android/platform/android-sdk/platform-tools/adb kill-server
-# /home/jcreyf/.buildozer/android/platform/android-sdk/platform-tools/adb start-server
-# /home/jcreyf/.buildozer/android/platform/android-sdk/platform-tools/adb devices
-# /home/jcreyf/.buildozer/android/platform/android-sdk/platform-tools/adb usb
-#
+# Useful adb commands to debug potential issues:
 
-# /> lsusb
-#   Bus 001 Device 016: ID 22b8:2e82 Motorola PCS XT1541 [Moto G 3rd Gen]
+# Get the PID of your app on the phone:
+#  /> adb shell ps -e | grep jocreyf.com.secrets | tr -s [:space:] ' '
+#  u0_a275 8915 1039 1113700 72416 0 0 S jocreyf.com.secrets
 #
-# Created udev file:
-#   /lib/udev/rules.d/70-android-tools-adb.rules
-#    #  SUBSYSTEM=="usb", ATTR{idVendor}=="22b8", ATTR{idProduct}=="2e82", MODE="0666", OWNER="jcreyf", TAG+="uaccess"
-#      SUBSYSTEM=="usb", ATTR{idVendor}=="22b8", ATTR{idProduct}=="2e82", MODE="0666", OWNER="root", GROUP="androidadb", SYMLINK+="android%n"
+#  /> adb shell ps -e | grep jocreyf.com.secrets | tr -s [:space:] ' ' | cut -d' ' -f2
+#  8915
 #
-# /> sudo groupadd androidadb
-# /> sudo usermod -a -G androidadb jcreyf
-#
-# /> lsusb -v -d 22b8:2e82
-#      iManufacturer           1 motorola
-#      iProduct                2 moto z3
-#
-# /> lsusb -v -d 22b8:2e82 | grep -B 3 -i iInterface
-#      bInterfaceClass       255 Vendor Specific Class
-#      bInterfaceSubClass    255 Vendor Specific Subclass
-#      bInterfaceProtocol      0
-#      iInterface              5 MTP
-#
-# (this is apparently no longer needed in newer ADB versions):
-# /> cat ~/.android/adb_usb.ini
-#      0x22B8
-#      0x2E82
-#
+#  /> adb logcat --pid=$(adb shell ps -e | grep jocreyf.com.secrets | tr -s [:space:] ' ' | cut -d' ' -f2)

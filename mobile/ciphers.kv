@@ -13,7 +13,7 @@ FloatLayout:
     text: "Encryption key:"
     font_size: "20sp"
     size_hint: (.25, .25)
-    pos_hint: {'x':.05, 'y':.60}
+    pos_hint: {'x':.10, 'y':.70}
   TextInput:
     id: txtKey
     hint_text: "Enter the encryption key"
@@ -24,7 +24,7 @@ FloatLayout:
     focus: True
     multiline: False
     border: (2, 2, 2, 2)
-    pos_hint: {'x':.30, 'y':.69}
+    pos_hint: {'x':.10, 'y':.72}
     size_hint: 0.50, 0.065
     on_text: app.txtKey()
 
@@ -32,7 +32,7 @@ FloatLayout:
     text: "Password:"
     font_size: "20sp"
     size_hint: (.25, .25)
-    pos_hint: {'x':.05, 'y':.45}
+    pos_hint: {'x':.10, 'y':.55}
   TextInput:
     id: txtPwd
     hint_text: "Enter the Password"
@@ -43,19 +43,19 @@ FloatLayout:
     focus: True
     multiline: False
     border: (2, 2, 2, 2)
-    pos_hint: {'x':.30, 'y':.54}
+    pos_hint: {'x':.10, 'y':.57}
     size_hint: 0.50, 0.065
     on_text: app.txtPwd()
 
   Label:
     id: lblPwd
     text: ""
-    font_size: "20sp"
+    font_size: "16sp"
     size_hint: (.25, .25)
-    pos_hint: {'x':.40, 'y':.30}
+    pos_hint: {'x':.40, 'y':.40}
 
   Button:
     text: "Process"
     size_hint: (.2, .1)
-    pos_hint: {'x':.7, 'y':.1}
+    pos_hint: {'x':.70, 'y':.30}
     on_release: app.btnProcess()
