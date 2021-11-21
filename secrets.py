@@ -17,7 +17,7 @@ class AES_256_CBC(object):
   """ This class will encrypt/decrypt using the aes-256-cbc cipher.
   """
   
-  def __init__(self, key: str, verbose: bool = False) -> None:
+  def __init__(self, key: str, keyDir: str = "", verbose: bool = False) -> None:
     """ Constructor, setting the encryption key.
     If we have a secondary "special key" on the system, then that secondary key
     will be used to encrypt the encryption key.  That encrypted key then becomes the
@@ -25,6 +25,7 @@ class AES_256_CBC(object):
 
     Arguments:
       key (str): the encryption key;
+      keyDir (str): the directory that has the optional secondary encryption key;
       verbose (bool): level of log messages;
     """
     self.verbose=verbose
@@ -32,26 +33,38 @@ class AES_256_CBC(object):
     # Set the secondary optional "special key" (if we have one):
     try:
       self.log("Fetching special key...")
-      home=str(Path.home())
-      with open(f"{home}/key.txt","r") as f:
+      if keyDir == "":
+        # Try the home directory if no explicit directory was given:
+        keyDir=str(Path.home())
+      self.log(f"Secondary key directory: {keyDir}")
+      with open(f"{keyDir}/key.txt","r") as f:
         _specialKey=f.readline()
       f.close()
       # Remove potential newline characters from the string:
       _specialKey=_specialKey.replace("\n", "")
+      self.log(f"Secondary key: {_specialKey}")
     except:
       # Ignore any and all exceptions to truly make the "special key" optional.
       _specialKey=""
 
     if _specialKey == "":
       # Use the given key if we don't have a "special key":
+      self.log("Use single key (no secondary key)")
       self.key = hashlib.sha256(key.encode()).digest()
     else:
       # Aha!  We have a secondary key to make things "special".
+      self.log("Encode the key with the secondary key")
       self.key=hashlib.sha256(_specialKey.encode()).digest()
       self.log(f"special key: {self.key}")
-      _bytes=self.encrypt(key, special=True)
-      self.log(f"encrypted: {_bytes}")
-      self.key=hashlib.sha256(_bytes.encode("utf-8")).digest()
+# The encryption is ending up different on the phone and thus is not identical cross platform.
+# The quick temp fix is to store the encrypted secondary key into the special file instead of
+# encrypting the string here until I can find a solution.
+# The special file should have the key as a string and we should encode it here.  Instead, we
+# now have the encoded string in the special file and using it here as is.
+# Thus temporarily taking out these encryption/encoding step of the secondary key:
+#      _bytes=self.encrypt(key, special=True)
+#      self.log(f"encrypted: {_bytes}")
+#      self.key=hashlib.sha256(_bytes.encode("utf-8")).digest()
 
 
   def log(self, msg: str) -> None:
