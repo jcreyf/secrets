@@ -21,7 +21,11 @@ buildozer android debug deploy run
 if [ $? -eq 0 ] ; then
   echo "Build successful"
   ls -la ./bin/
-#  scp ./bin/secrets*.apk 192.168.1.250:/tmp/
+  scp ./bin/secrets*.apk 192.168.1.250:/tmp/
+  # Wait for a few seconds before trying to tail the apps's log.
+  # Give the phone some time to launch the app:
+  sleep 3s
+  # Tail the app's log:
   adb logcat --pid=$(adb shell ps -e | grep jocreyf.com.secrets | tr -s [:space:] ' ' | cut -d' ' -f2)
 fi
 

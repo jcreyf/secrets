@@ -26,6 +26,7 @@ FloatLayout:
     font_size: "20sp"
     focus: True
     multiline: False
+    write_tab: False
     border: (2, 2, 2, 2)
     size_hint: 0.89, 0.065
     pos_hint: {'x':.01, 'y':.72}
@@ -48,6 +49,7 @@ FloatLayout:
     font_size: "20sp"
     focus: True
     multiline: False
+    write_tab: False
     border: (2, 2, 2, 2)
     size_hint: 0.89, 0.065
     pos_hint: {'x':.01, 'y':.57}
@@ -77,7 +79,13 @@ FloatLayout:
     on_release: app.btnProcess()
 
   Button:
+    text: "Clip"
+    size_hint: (.10, .07)
+    pos_hint: {'x':.01, 'y':.30}
+    on_release: app.btnClipboard()
+
+  Button:
     text: "Exit"
-    size_hint: (.15, .07)
-    pos_hint: {'x':.84, 'y':.30}
+    size_hint: (.10, .07)
+    pos_hint: {'x':.89, 'y':.30}
     on_release: app.btnExit()
