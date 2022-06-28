@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 # ======================================================================================================== #
 # Little app to encrypt/decrypt strings using a standard, strong cipher (AES 256bit).                      #
+# You can set a string (key) to encrypt the text with.  A blank, empty string is accepted too in case      #
+# that's what's wanted.                                                                                    #
+# The tool also supports an extra optional key string that is stored in a text file.  This extra key will  #
+# be combined with the primary key string to provide a little extra security.                              #
+# (default location of optional "extra" key-file: ~/jc_secrets_key.txt)                                    #
+# (the path to the extra key-file can be overridden by setting env variable: 'JC_SECRETS_FILE')            #
 #                                                                                                          #
 # Arguments:                                                                                               #
 #    --version                         : show app version                                                  #
@@ -8,13 +14,15 @@
 #    -e          | --encrypt           : encrypt the string                                                #
 #    -d          | --decrypt           : decrypt the string                                                #
 #    -k <string> | --key <string>      : encryption key                                                    #
+#                                        can also be set through environment variable 'JC_SECRETS_KEY'     #
 #    -p <string> | --password <string> : the string to encrypt/decrypt                                     #
 #    -f <uri>    | --file <uri>        : file to process html <PWD>-tags                                   #
 #                                                                                                          #
 # Example:                                                                                                 #
 #   /> $0 -k MyKey -e -p MySecret                                                                          #
 #      -> bjJxQ2VxVzRRNEMyeXVyRXFJR2k5clpDMlNaSldWc1AyOU5DS3dkQmJ3Zz0=                                     #
-#   /> $0 -k MyKey -d -p bjJxQ2VxVzRRNEMyeXVyRXFJR2k5clpDMlNaSldWc1AyOU5DS3dkQmJ3Zz0=                      #
+#   /> export JC_SECRETS_KEY="MyKey"                                                                       #
+#   /> $0 -d -p bjJxQ2VxVzRRNEMyeXVyRXFJR2k5clpDMlNaSldWc1AyOU5DS3dkQmJ3Zz0=                               #
 #      -> MySecret                                                                                         #
 # -------------------------------------------------------------------------------------------------------- #
 # We're using this Crypto implementation for the AES 256bit CBC cipher logic:                              #
@@ -47,7 +55,7 @@ class AES_256_CBC(object):
         return f"{os.path.basename(__file__)}: {AES_256_CBC.__version__}"
 
 
-    def __init__(self, key: str, keyDir: str = "", verbose: bool = False) -> None:
+    def __init__(self, key: str, keyFile: str = "", verbose: bool = False) -> None:
         """ Constructor, setting the encryption key.
         If we have a secondary "special key" on the system, then that secondary key
         will be used to encrypt the encryption key.  That encrypted key then becomes the
@@ -55,17 +63,24 @@ class AES_256_CBC(object):
 
         Arguments:
             key (str): the encryption key;
-            keyDir (str): the directory that has the optional secondary encryption key;
+            keyFile (str): the full path to a file that has the optional secondary encryption key;
             verbose (bool): level of log messages;
         """
         self.verbose=verbose
         self.block_size=AES.block_size
         # Set the secondary optional "special key" (if we have one):
         try:
-            if keyDir == "":
-                # Try the home directory if no explicit directory was given:
-                keyDir=str(Path.home())
-            with open(f"{keyDir}/key.txt","r") as f:
+            if keyFile == "":
+                # Get the path from the 'JC_SECRETS_FILE' environment variable (if set):
+                try:
+                    keyFile=os.environ["JC_SECRETS_FILE"]
+                except KeyError:
+                    # We get this exception if the environment variable is not set.
+                    # Try the home directory if no explicit directory was given:
+                    keyFile=f"{str(Path.home())}/jc_secrets_key.txt"
+
+#            self.log(f"Extra key: {keyFile}")
+            with open(keyFile,"r") as f:
                 _specialKey=f.readline()
             f.close()
             # Remove potential newline characters from the string:
@@ -76,11 +91,12 @@ class AES_256_CBC(object):
 
         if _specialKey == "":
             # Use the given key if we don't have a "special key":
-            self.key = hashlib.sha256(key.encode()).digest()
+            self.key=hashlib.sha256(key.encode()).digest()
         else:
             # Aha!  We have a secondary key to make things a little bit more "special".
             _specialKey=f"{_specialKey}#{key}"
             self.key=hashlib.sha256(_specialKey.encode()).digest()
+            self.log("Extra key set")
 
 
     def log(self, msg: str) -> None:
@@ -156,8 +172,10 @@ class AES_256_CBC(object):
 
 
     @staticmethod
-    def _unpad(s):
-        return s[:-ord(s[len(s)-1:])]
+    def _unpad(txt: str) -> str:
+        """ Remove the extra characters (if any) that were added during the encryption process.
+        """
+        return txt[:-ord(txt[len(txt)-1:])]
 
 # ------
 
@@ -199,7 +217,8 @@ if __name__ == "__main__":
 
 
     # Define the command-line arguments that the app supports:
-    parser=argparse.ArgumentParser(description="Encrypt or Decrypt secrets.")
+    parser=argparse.ArgumentParser(description="Encrypt or Decrypt secrets.", \
+                                   epilog=f"example: %(prog)s -e -k 'MyKey' -p 'MySecret'")
     parser.add_argument("--version", \
                         action="version", \
                         version=AES_256_CBC.version())
@@ -223,9 +242,9 @@ if __name__ == "__main__":
                         help="decrypt the string")
     parser.add_argument("-k", "--key", \
                         dest="__KEY", \
-                        required=True, \
+                        required=False, \
                         metavar="<string>", \
-                        help="encryption key")
+                        help="encryption key (you can also set env var 'JC_SECRETS_KEY')")
     parser.add_argument("-p", "--password", \
                         dest="__PWD", \
                         required=False, \
@@ -240,25 +259,34 @@ if __name__ == "__main__":
     # Now parse the command-line arguments and automatically take care of handling some of the usage requests:
     __ARGS=parser.parse_args()
 
-    # Display version information:
+    # Pull out the values that we want:
     VERBOSE=__ARGS.__VERBOSE
+    ENCRYPT=__ARGS.__ENCRYPT
+    DECRYPT=__ARGS.__DECRYPT
+    pwd=__ARGS.__PWD
+    key=__ARGS.__KEY
+
+    # Display version information (if the verbose flag is set):
     verbose(AES_256_CBC.version())
 
     # Do some argument validations:
-    if (__ARGS.__ENCRYPT or __ARGS.__DECRYPT)==False:
+    if (ENCRYPT or DECRYPT)==False:
         sys.exit("Need to use the '-e' (encrypt) or '-d' (decrypt) flag!")
-    if (__ARGS.__ENCRYPT and __ARGS.__DECRYPT)==True:
+    if (ENCRYPT and DECRYPT)==True:
         sys.exit("Can't use both the '-e' (encrypt) and '-d' (decrypt) flags at the same time!")
-    if __ARGS.__PWD == None and __ARGS.__FILE == None:
+    if pwd == None and __ARGS.__FILE == None:
         sys.exit("Need to provide a password (-p) or file (-f) to process!")
-    if __ARGS.__PWD != None and __ARGS.__FILE != None:
+    if pwd != None and __ARGS.__FILE != None:
         sys.exit("Can't provide both a password (-p) and a file (-f) to process at the same time!")
+    # The encryption key can be set through the '-k' argument on the command line or through the 'JC_SECRETS_KEY' env var.
+    # It's not optional though, so we need a value one way or the other! (an explicit empty string is accepted)
+    if key == None:
+        try:
+            key=os.environ['JC_SECRETS_KEY']
+        except KeyError:
+            sys.exit("Need to use '-k' flag to provide an encryption key or set it through the 'JC_SECRETS_KEY' environment variable!")
 
-    # Pull out the values that we want:
-    pwd=__ARGS.__PWD
-    ENCRYPT=__ARGS.__ENCRYPT
-
-    cipher=AES_256_CBC(key=__ARGS.__KEY, verbose=VERBOSE)
+    cipher=AES_256_CBC(key=key, verbose=VERBOSE)
 
     if __ARGS.__FILE != None:
         # We need to process a file:
