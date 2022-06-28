@@ -37,6 +37,9 @@ class AES_256_CBC(object):
     """ This class will encrypt/decrypt using the aes-256-cbc cipher.
     """
     __version__ = "v0.2 - 2022-06-24"
+# ToDo: Add a tag in front and at the end of the encoded string.  We can use those tags later in more complicated search filter.
+#    __pretag__  = "JC22#"
+#    __posttag__ = "#JC22"
 
     @staticmethod
     def version() -> str:
