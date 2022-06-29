@@ -75,14 +75,14 @@ class AES_256_CBC(object):
         self._key_file=None
         self._special_key=False
         self._block_size=AES.block_size
-        # We may have gotten the default, empty-string encryption key.  See if a key was set in the
+        # We may have gotten the default, empty-string encryption key or None.  See if a key was set in the
         # environment variable and use that if set:
-        if key == "":
+        if key == "" or key == None:
             try:
                 key=os.environ['JC_SECRETS_KEY']
             except KeyError:
                 # Environment variable has not been set.  Ignore the issue and use the default emty string.
-                pass
+                key=""
 
         # Set the secondary optional "special key" (if we have one):
         try:
