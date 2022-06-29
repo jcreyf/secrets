@@ -40,6 +40,7 @@
 import os
 import base64
 import hashlib
+from pathlib import Path    # Needed to find the home directory of the user
 from Crypto import Random
 from Crypto.Cipher import AES
 
@@ -217,7 +218,6 @@ class AES_256_CBC(object):
 if __name__ == "__main__":
     import sys
     import argparse
-    from pathlib import Path
     from bs4 import BeautifulSoup
 
     VERBOSE=False
