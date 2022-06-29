@@ -21,7 +21,9 @@
 # Example:                                                                                                 #
 #   /> $0 -k MyKey -e -p MySecret                                                                          #
 #      -> bjJxQ2VxVzRRNEMyeXVyRXFJR2k5clpDMlNaSldWc1AyOU5DS3dkQmJ3Zz0=                                     #
+#                                                                                                          #
 #   /> export JC_SECRETS_KEY="MyKey"                                                                       #
+#   /> export JC_SECRETS_FILE=~/jc_secrets_key.txt                                                         #
 #   /> $0 -d -p bjJxQ2VxVzRRNEMyeXVyRXFJR2k5clpDMlNaSldWc1AyOU5DS3dkQmJ3Zz0=                               #
 #      -> MySecret                                                                                         #
 # -------------------------------------------------------------------------------------------------------- #
@@ -33,7 +35,7 @@
 #   conda install pycryptodome                                                                             #
 # ======================================================================================================== #
 #  2021-11-20  v0.1  jcreyf  Initial version.                                                              #
-#  2022-06-24  V0.2  jcreyf  Fix issue with encryption key and simplify things.                            #
+#  2022-06-28  V0.2  jcreyf  Fix issue with encryption key and simplify things.                            #
 # ======================================================================================================== #
 import os
 import base64
@@ -44,7 +46,7 @@ from Crypto.Cipher import AES
 class AES_256_CBC(object):
     """ This class will encrypt/decrypt using the aes-256-cbc cipher.
     """
-    __version__ = "v0.2 - 2022-06-24"
+    __version__ = "v0.2 - 2022-06-28"
 # ToDo: Add a tag in front and at the end of the encoded string.  We can use those tags later in more complicated search filter.
 #    __pretag__  = "JC22#"
 #    __posttag__ = "#JC22"
@@ -55,7 +57,7 @@ class AES_256_CBC(object):
         return f"{os.path.basename(__file__)}: {AES_256_CBC.__version__}"
 
 
-    def __init__(self, key: str, keyFile: str = "", verbose: bool = False) -> None:
+    def __init__(self, key: str = "", keyFile: str = "", verbose: bool = True) -> None:
         """ Constructor, setting the encryption key.
         If we have a secondary "special key" on the system, then that secondary key
         will be used to encrypt the encryption key.  That encrypted key then becomes the
@@ -66,8 +68,21 @@ class AES_256_CBC(object):
             keyFile (str): the full path to a file that has the optional secondary encryption key;
             verbose (bool): level of log messages;
         """
-        self.verbose=verbose
-        self.block_size=AES.block_size
+        self._verbose=verbose
+        self._key_hash=None
+        self._key=None
+        self._key_file=None
+        self._special_key=False
+        self._block_size=AES.block_size
+        # We may have gotten the default, empty-string encryption key.  See if a key was set in the
+        # environment variable and use that if set:
+        if key == "":
+            try:
+                key=os.environ['JC_SECRETS_KEY']
+            except KeyError:
+                # Environment variable has not been set.  Ignore the issue and use the default emty string.
+                pass
+
         # Set the secondary optional "special key" (if we have one):
         try:
             if keyFile == "":
@@ -81,22 +96,40 @@ class AES_256_CBC(object):
 
 #            self.log(f"Extra key: {keyFile}")
             with open(keyFile,"r") as f:
-                _specialKey=f.readline()
+                specialKey=f.readline()
             f.close()
             # Remove potential newline characters from the string:
-            _specialKey=_specialKey.replace("\n", "")
+            specialKey=specialKey.replace("\n", "")
+            self._key_file=keyFile
         except:
             # Ignore any and all exceptions to truly make the "special key" optional.
-            _specialKey=""
+            specialKey=""
 
-        if _specialKey == "":
+        if specialKey == "":
             # Use the given key if we don't have a "special key":
-            self.key=hashlib.sha256(key.encode()).digest()
+            self._key=key
+            self._key_hash=hashlib.sha256(self._key.encode()).digest()
         else:
             # Aha!  We have a secondary key to make things a little bit more "special".
-            _specialKey=f"{_specialKey}#{key}"
-            self.key=hashlib.sha256(_specialKey.encode()).digest()
+            self._key=f"{specialKey}#{key}"
+            self._key_hash=hashlib.sha256(self._key.encode()).digest()
+            self._special_key=True
             self.log("Extra key set")
+
+
+    @property
+    def key(self) -> str:
+        return self._key
+
+
+    @property
+    def special_key(self) -> bool:
+        return self._special_key
+
+
+    @property
+    def key_file(self) -> str:
+        return self._key_file
 
 
     def log(self, msg: str) -> None:
@@ -105,7 +138,7 @@ class AES_256_CBC(object):
         Arguments:
             msg (str): the message to log
         """
-        if self.verbose:
+        if self._verbose:
             print(msg)
 
 
@@ -122,11 +155,11 @@ class AES_256_CBC(object):
             multiple potential exceptions during either the encryption or encoding process;
         """
         # Make sure the text is at the correct length:
-        txt=self._pad(txt)
+        txt=AES_256_CBC.__pad(txt, blockSize=self._block_size)
         # Generate a random seed based on AES block size (16 bytes in our case):
-        iv=Random.new().read(self.block_size)
+        iv=Random.new().read(self._block_size)
         # Initialize the cipher:
-        cipher=AES.new(self.key, AES.MODE_CBC, iv)
+        cipher=AES.new(self._key_hash, AES.MODE_CBC, iv)
         encoded=base64.b64encode(iv+cipher.encrypt(txt.encode()))
         # We now have a byte object with the encrypted string.
         # Encode it as Base64:
@@ -152,27 +185,29 @@ class AES_256_CBC(object):
         decode_txt=decode_bytes.decode("utf-8")
         txt=base64.b64decode(decode_txt)
         iv=txt[:AES.block_size]
-        cipher=AES.new(self.key, AES.MODE_CBC, iv)
-        decrypt_txt=self._unpad(cipher.decrypt(txt[AES.block_size:]))
+        cipher=AES.new(self._key_hash, AES.MODE_CBC, iv)
+        decrypt_txt=AES_256_CBC.__unpad(cipher.decrypt(txt[AES.block_size:]))
         return decrypt_txt.decode('utf-8')
 
 
-    def _pad(self, txt: str) -> str:
+    @staticmethod
+    def __pad(txt: str, blockSize: int) -> str:
         """ Append characters to the string to make sure it's the correct length for the block size in the AES encryption.
 
         Arguments:
             txt (str): the text to pad
+            blockSize (int): the number of characters needed in the unicode block
 
         Returns:
             str: the padded text
         """
         return txt + \
-            (self.block_size - len(txt) % self.block_size) * \
-            chr(self.block_size - len(txt) % self.block_size)
+            (blockSize - len(txt) % blockSize) * \
+            chr(blockSize - len(txt) % blockSize)
 
 
     @staticmethod
-    def _unpad(txt: str) -> str:
+    def __unpad(txt: str) -> str:
         """ Remove the extra characters (if any) that were added during the encryption process.
         """
         return txt[:-ord(txt[len(txt)-1:])]
@@ -265,6 +300,7 @@ if __name__ == "__main__":
     DECRYPT=__ARGS.__DECRYPT
     pwd=__ARGS.__PWD
     key=__ARGS.__KEY
+    file=__ARGS.__FILE
 
     # Display version information (if the verbose flag is set):
     verbose(AES_256_CBC.version())
@@ -286,11 +322,12 @@ if __name__ == "__main__":
         except KeyError:
             sys.exit("Need to use '-k' flag to provide an encryption key or set it through the 'JC_SECRETS_KEY' environment variable!")
 
+    # Instantiate our encryption object:
     cipher=AES_256_CBC(key=key, verbose=VERBOSE)
 
-    if __ARGS.__FILE != None:
+    if file != None:
         # We need to process a file:
-        processFile(__ARGS.__FILE, ENCRYPT)
+        processFile(file, ENCRYPT)
     else:
         # No file processing.  Just a single encrypt/decrypt:
         if ENCRYPT:
