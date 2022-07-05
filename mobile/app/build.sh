@@ -11,6 +11,10 @@ sed -i '1 i\# THIS FILE IS REQUIRED FOR BUILDOZER TO GENERATE THE ANDROID APP' m
 sed -i '1 i\# THIS FILE IS AN EXACT COPY OF secrets.py!!!!' main.py
 sed -i '1 i\#' main.py
 
+# Get the app's version info and write to the buildozer.spec file:
+version=$(grep " __version__ " secrets.py | cut -d'"' -f2 | sed 's/ //g')
+sed -i "s/^version = .*/version = ${version}/" buildozer.spec
+
 # Todo: add a flag to "clean" (delete .buildozer and venv and bin directories before starting
 
 # Build, deploy over USB and launch the app on the phone:
