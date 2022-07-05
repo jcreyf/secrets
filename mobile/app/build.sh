@@ -17,6 +17,9 @@ sed -i "s/^version = .*/version = ${version}/" buildozer.spec
 
 # Todo: add a flag to "clean" (delete .buildozer and venv and bin directories before starting
 
+# Select the correct Anaconda environment for this Python project:
+conda activate secrets
+
 # Build, deploy over USB and launch the app on the phone:
 buildozer android debug deploy run
 
