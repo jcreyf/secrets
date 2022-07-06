@@ -45,12 +45,13 @@ class CiphersApp(App):
     else:
       # platform is one of: "android", "linux", "macosx", "ios", "win" or "unknown"
       if platform == "android":
-        keyDir="/storage/emulated/0/jocreyf.com/secrets"
+        keyFile="/storage/emulated/0/jocreyf.com/secrets/jc_secrets_key.txt"
+        print(f"Secondary key file: {keyFile}")
       else:
         # This will result in looking into the home directory:
-        keyDir=""
-      print(f"Secondary key file: {keyDir}/key.txt")
-      cipher=secrets.AES_256_CBC(key=self.key, keyDir=keyDir, verbose=True)
+        keyFile=""
+        print(f"Secondary key file will be searched for in home directory")
+      cipher=secrets.AES_256_CBC(key=self.key, keyFile=keyFile, verbose=True)
       print(f"Cipher: {cipher}")
       # Try to decrypt.  If successful, then good.  Otherwise, encrypt.
       try:
