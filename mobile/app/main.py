@@ -11,6 +11,23 @@ from kivy.core.clipboard import Clipboard
 # Non Android devices will need pyperclip to copy to the clipboard
 import pyperclip
 
+# Python for Android:
+#   https://python-for-android.readthedocs.io/en/latest/apis/
+#   https://github.com/kivy/python-for-android/tree/master
+#   https://pypi.org/project/python-for-android/
+#   /> pip install python-for-android
+#   old: https://anaconda.org/auto/p4a.common
+#   
+if platform == "android":
+  # Get permission to read the filesystem (need to be able to read the key-file)
+  from android.permissions import request_permissions, Permission
+  request_permissions([Permission.READ_EXTERNAL_STORAGE])
+  # Make sure to also have this in the 'buildozer.spec' file:
+  #   android.permissions = READ_EXTERNAL_STORAGE
+  #
+  # We can also manually grant permission to the installed app on the Android device by selecting
+  # the app in the system settings and enabling the "Storage" permission.
+
 # The next 7 lines are just so we can import the "secrets" module from this
 # directory's parent directory:
 import os
@@ -45,8 +62,15 @@ class CiphersApp(App):
     else:
       # platform is one of: "android", "linux", "macosx", "ios", "win" or "unknown"
       if platform == "android":
-        keyFile="/storage/emulated/0/jocreyf.com/secrets/jc_secrets_key.txt"
+        keyFile=f"{os.environ['EXTERNAL_STORAGE']}/jocreyf.com/secrets/jc_secrets_key.txt"
         print(f"Secondary key file: {keyFile}")
+        # log the special key:
+        with open(keyFile,"r") as f:
+            specialKey=f.readline()
+        f.close()
+        # Remove potential newline characters from the string:
+        specialKey=specialKey.replace("\n", "")
+        print(f"Special key: '{specialKey}'")
       else:
         # This will result in looking into the home directory:
         keyFile=""
@@ -56,10 +80,10 @@ class CiphersApp(App):
       # Try to decrypt.  If successful, then good.  Otherwise, encrypt.
       try:
         print(f"Trying to decrypt...")
-#        print(f"  key: '{self.key}'")
-#        print(f"  pwd: '{self.pwd}'")
+        print(f"  key: '{self.key}'")
+        print(f"  pwd: '{self.pwd}'")
         txt=cipher.decrypt(self.pwd)
-#        print(f"txt: {txt}")
+        print(f"txt: {txt}")
         if txt == "":
           txt="[color=#FF0000]Encrypt returned an empty string.\nThat's not good![/color]"
         else:
@@ -69,10 +93,10 @@ class CiphersApp(App):
         print(f"decrypt failed: {str(err)}")
         try:
           print(f"Trying to encrypt...")
-#          print(f"  key: '{self.key}'")
-#          print(f"  pwd: '{self.pwd}'")
+          print(f"  key: '{self.key}'")
+          print(f"  pwd: '{self.pwd}'")
           txt=cipher.encrypt(self.pwd)
-#          print(f"txt: {txt}")
+          print(f"txt: {txt}")
           if txt == "":
             txt="[color=#FF0000]Decrypt returned an empty string.\nThat's not good![/color]"
           else:
@@ -103,12 +127,16 @@ class CiphersApp(App):
 
 
   def btnClipboard(self):
+    # For some dark reason, Z3 copies only the first 31 characters to the clipboard from a much longer string!!!
+    print(f"Clip: '{self.output}'")
     try:
       # This will fail in linux:
       Clipboard.copy(self.output)
+      print("Clipboard.copy was used")
     except:
       # Kivy's clipboard module failed.  Doing it with pyperclip:
       pyperclip.copy(self.output)
+      print("Pyperclip,copy was used")
 
 
   def btnExit(self):
