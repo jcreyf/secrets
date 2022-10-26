@@ -1,6 +1,7 @@
-# Ignore temp directories:
+# Ignore temp directories and files:
 tmp/
 temp/
+*.tmp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
