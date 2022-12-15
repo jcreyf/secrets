@@ -128,6 +128,7 @@ class CiphersApp(App):
 
   def btnClipboard(self):
     # For some dark reason, Z3 copies only the first 31 characters to the clipboard from a much longer string!!!
+    # It works fine on the Samsung S6 though!!!
     print(f"Clip: '{self.output}'")
     try:
       # This will fail in linux:
