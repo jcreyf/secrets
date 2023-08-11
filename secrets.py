@@ -34,6 +34,9 @@
 # or                                                                                                       #
 #   conda install pycryptodome                                                                             #
 # ======================================================================================================== #
+# BeautifulSoup is used when we process credentials from a file with HTML:                                 #
+#   conda install beautifulsoup4                                                                           #
+# ======================================================================================================== #
 #  2021-11-20  v0.1  jcreyf  Initial version.                                                              #
 #  2022-06-28  V0.2  jcreyf  Fix issue with encryption key and simplify things.                            #
 # ======================================================================================================== #
